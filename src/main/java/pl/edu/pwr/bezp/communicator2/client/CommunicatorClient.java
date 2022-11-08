@@ -7,25 +7,27 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import pl.edu.pwr.bezp.communicator2.actions.AbstractAction;
 import pl.edu.pwr.bezp.communicator2.actions.response.RespAbstract;
+import pl.edu.pwr.bezp.communicator2.actions.response.message.Conversation;
 
 import javax.annotation.PostConstruct;
 import javax.naming.CommunicationException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Component
-public class CommunicatorClient  {
+public class CommunicatorClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(CommunicatorClient.class);
-
+    private static Map<String, AbstractAction> communicatorOptions;
+    private static Map<String, Conversation> conversations;
     private final ServerAuthorizationLayer authorizationLayer;
-    public static Map<String, AbstractAction> communicatorOptions;
 
-    public CommunicatorClient( ServerAuthorizationLayer authorizationLayer) {
+
+    public CommunicatorClient(ServerAuthorizationLayer authorizationLayer) {
         this.authorizationLayer = authorizationLayer;
     }
 
@@ -36,16 +38,7 @@ public class CommunicatorClient  {
 
     @PostConstruct
     void init() throws Exception {
-        try {
-            authorizationLayer.getSessionPort();
-            authorizationLayer.makeHandShake();
-            authorizationLayer.switchToAes();
-            makeClientLogOrReg();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidKeySpecException e) {
-            throw new RuntimeException(e + "");
-        }
+        makeClientLogOrReg();
     }
 
     private void makeClientLogOrReg() {
@@ -94,12 +87,20 @@ public class CommunicatorClient  {
     private RespAbstract performAction(String action) throws CommunicationException {
         if (communicatorOptions.containsKey(action)) {
             LOGGER.info("USER PERFORMED " + action + " WITH " /*+ message*/);
-            return communicatorOptions.get(action).run();
+            return communicatorOptions.get(action).run(this);
         }
         throw new CommunicationException("No such action available");
     }
 
-    private void makeClientRestOfActions(BufferedReader reader)  {
+    public List<String> getConversationNames() {
+        return new ArrayList<>(conversations.keySet());
+    }
+
+    public List<String> getUserNames() {
+        return null;//todo
+    }
+
+    private void makeClientRestOfActions(BufferedReader reader) {
         Map<Integer, String> availableActions = new HashMap<>();
         availableActions.put(1, "createConversation");
         availableActions.put(2, "listConversations");
@@ -127,6 +128,7 @@ public class CommunicatorClient  {
                 e.printStackTrace();
             }
         }
+
 //
 //
 //    }
