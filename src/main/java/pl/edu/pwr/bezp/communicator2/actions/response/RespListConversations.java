@@ -2,26 +2,9 @@ package pl.edu.pwr.bezp.communicator2.actions.response;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import pl.edu.pwr.bezp.communicator2.actions.response.message.Conversation;
 
 import java.util.ArrayList;
-
-class Conversation{
-    public String name;
-    public ArrayList<String> users;
-
-    public Conversation(String name, ArrayList<String> users) {
-        this.name = name;
-        this.users = users;
-    }
-
-    @Override
-    public String toString() {
-        return "Conversation{" +
-                "name='" + name + '\'' +
-                ", users=" + users +
-                '}';
-    }
-}
 
 public class RespListConversations extends RespAbstract{
     private final ArrayList<Conversation> conversations = new ArrayList<>();
@@ -40,7 +23,6 @@ public class RespListConversations extends RespAbstract{
                 }
                 conversations.add(new Conversation(jsonObject.getString("name"),tempUserList));
             }
-            System.out.println(conversations);
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }

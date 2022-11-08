@@ -24,7 +24,6 @@ public class RespGetConversationMessages extends RespAbstract {
                     this.messages.add(new Message(messageItem.getString("author"),
                             messageItem.getString("dateTime"), messageItem.getString("content")));
                 }
-                System.out.println(messages);
             }
         } catch (JSONException e) {
             throw new RuntimeException(e);

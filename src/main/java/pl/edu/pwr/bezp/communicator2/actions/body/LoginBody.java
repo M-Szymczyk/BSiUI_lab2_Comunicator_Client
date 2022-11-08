@@ -21,14 +21,10 @@ public class LoginBody implements Body {
         this.password = password;
     }
 
-    public LoginBody() {
-        try {
-            System.out.println("Wprowadz login: ");
-            login = reader.readLine();
-            System.out.println("\nWprowadz haslo: ");
-            password = reader.readLine();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public LoginBody(String login, String password) {
+        this.login = login;
+        this.password = password;
     }
+
+
 }
