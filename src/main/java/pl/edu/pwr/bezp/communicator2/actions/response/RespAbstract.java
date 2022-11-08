@@ -13,6 +13,9 @@ public abstract class RespAbstract {
             var resp = new JSONObject(respText);
             responseStatus = HttpStatus.valueOf(resp.getInt("status"));
             responseText = (String) resp.get("response");
+            if(responseStatus!=HttpStatus.OK){
+                System.out.println("Niepowodzenie wykonania operacji. Powod: "+responseText);
+            }
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }

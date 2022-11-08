@@ -13,6 +13,14 @@ class Conversation{
         this.name = name;
         this.users = users;
     }
+
+    @Override
+    public String toString() {
+        return "Conversation{" +
+                "name='" + name + '\'' +
+                ", users=" + users +
+                '}';
+    }
 }
 
 public class RespListConversations extends RespAbstract{
@@ -32,7 +40,7 @@ public class RespListConversations extends RespAbstract{
                 }
                 conversations.add(new Conversation(jsonObject.getString("name"),tempUserList));
             }
-
+            System.out.println(conversations);
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }

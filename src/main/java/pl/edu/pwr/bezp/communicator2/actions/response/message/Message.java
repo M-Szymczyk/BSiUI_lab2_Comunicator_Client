@@ -10,4 +10,13 @@ public class Message {
         this.dateTime = dateTime;
         this.content = content;
     }
+
+    @Override
+    public String toString() {
+        return "Message{" +
+                "author='" + author + '\'' +
+                ", dateTime='" + dateTime + '\'' +
+                ", content='" + content + '\'' +
+                '}';
+    }
 }

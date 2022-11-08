@@ -2,6 +2,7 @@ package pl.edu.pwr.bezp.communicator2.actions.response;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.http.HttpStatus;
 import pl.edu.pwr.bezp.communicator2.actions.response.message.Message;
 
 import java.util.ArrayList;
@@ -13,14 +14,17 @@ public class RespGetConversationMessages extends RespAbstract {
     public RespGetConversationMessages(String respText) {
         super(respText);
         try {
-            var messages = new JSONObject(respText).getJSONObject("body").getJSONArray("messages");
-            if (messages.length() == 0)
-                return;
-            for (int i = 0; i < messages.length(); i++) {
-                var messageItem = messages.getJSONObject(i);
+            if(getResponseStatus()== HttpStatus.OK) {
+                var messages = new JSONObject(respText).getJSONObject("body").getJSONArray("messages");
+                if (messages.length() == 0)
+                    return;
+                for (int i = 0; i < messages.length(); i++) {
+                    var messageItem = messages.getJSONObject(i);
 
-                this.messages.add(new Message(messageItem.getString("author"),
-                        messageItem.getString("dateTime"), messageItem.getString("content")));
+                    this.messages.add(new Message(messageItem.getString("author"),
+                            messageItem.getString("dateTime"), messageItem.getString("content")));
+                }
+                System.out.println(messages);
             }
         } catch (JSONException e) {
             throw new RuntimeException(e);

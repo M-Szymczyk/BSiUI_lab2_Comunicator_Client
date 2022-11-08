@@ -1,4 +1,4 @@
-package pl.edu.pwr.bezp.communicator2.client;
+package pl.edu.pwr.bezp.communicator2.client.crytoUtilsi;
 
 
 import org.springframework.beans.factory.annotation.Value;
@@ -29,16 +29,14 @@ public class CipherUtility {
         return keyPairGenerator.genKeyPair();
     }
 
-    private String encrypt(byte[] contentBytes, Key pubKey) throws NoSuchAlgorithmException, NoSuchProviderException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        //byte[] contentBytes = content.getBytes();
+    private String encrypt(byte[] contentBytes, Key pubKey) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.ENCRYPT_MODE, pubKey);
         byte[] cipherContent = cipher.doFinal(contentBytes);
-        String encoded = Base64.getEncoder().encodeToString(cipherContent);
-        return encoded;
+        return Base64.getEncoder().encodeToString(cipherContent);
     }
 
-    String encrypt(String text, Key publicKey) throws Exception {
+    public String encrypt(String text, Key publicKey) throws Exception {
         var textBytes = text.getBytes(StandardCharsets.UTF_8);
         StringBuilder result = new StringBuilder();
         int i = 0;
@@ -51,7 +49,7 @@ public class CipherUtility {
         return result.toString();
     }
 
-    String decrypt(String text, Key privateKey) throws Exception {
+    public String decrypt(String text, Key privateKey) throws Exception {
         var textBytes = text.getBytes(StandardCharsets.UTF_8);
         StringBuilder result = new StringBuilder();
         int i = 0;
@@ -60,7 +58,6 @@ public class CipherUtility {
             result.append(decrypt(toDecrypt, privateKey));
             i++;
         }
-//        result.append(decrypt(Arrays.copyOfRange(textBytes, 172 * (i ), textBytes.length), privateKey));
         return result.toString();
     }
 
@@ -78,20 +75,11 @@ public class CipherUtility {
         return Base64.getEncoder().encodeToString(keyBytes);
     }
 
-//    public PublicKey decodePublicKey(String keyStr) throws NoSuchAlgorithmException, InvalidKeySpecException {
-//        byte[] keyBytes = Base64.getDecoder().decode(keyStr);
-//        X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
-//        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-//        PublicKey key = keyFactory.generatePublic(spec);
-//        return key;
-//    }
-
     public PublicKey decodePublicKey(String keyStr) throws NoSuchAlgorithmException, InvalidKeySpecException {
         byte[] keyBytes = Base64.getDecoder().decode(keyStr);
         X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-        PublicKey key = keyFactory.generatePublic(spec);
-        return key;
+        return keyFactory.generatePublic(spec);
     }
 
     public PrivateKey decodePrivateKey(String keyStr) throws NoSuchAlgorithmException, InvalidKeySpecException {

@@ -19,6 +19,8 @@ public class RespListUsers extends RespAbstract {
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
+        System.out.println("Lista dostępnych klientów: ");
+        System.out.println(getUsers());
     }
 
     public List<String> getUsers() {
