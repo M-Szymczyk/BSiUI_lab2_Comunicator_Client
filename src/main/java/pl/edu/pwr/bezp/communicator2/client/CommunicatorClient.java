@@ -2,38 +2,45 @@ package pl.edu.pwr.bezp.communicator2.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import pl.edu.pwr.bezp.communicator2.actions.*;
-import pl.edu.pwr.bezp.communicator2.actions.response.*;
+import pl.edu.pwr.bezp.communicator2.actions.AbstractAction;
+import pl.edu.pwr.bezp.communicator2.actions.response.RespAbstract;
 
 import javax.annotation.PostConstruct;
+import javax.naming.CommunicationException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
-public class CommunicatorClient extends ServerAuthorizationLayer {
+public class CommunicatorClient  {
     private static final Logger LOGGER = LoggerFactory.getLogger(CommunicatorClient.class);
 
-    public CommunicatorClient(CipherUtility cipherUtility) {
-        super(cipherUtility);
-        var keyPair = cipherUtility.getKeyPair();
-        clientPrivateKey = keyPair.getPrivate();
-        clientPublicKey = keyPair.getPublic();
-//        ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
-//        root.setLevel(ch.qos.logback.classic.Level.DEBUG);
-        System.out.println(LOGGER.isDebugEnabled());
+    private final ServerAuthorizationLayer authorizationLayer;
+    public static Map<String, AbstractAction> communicatorOptions;
+
+    public CommunicatorClient( ServerAuthorizationLayer authorizationLayer) {
+        this.authorizationLayer = authorizationLayer;
+    }
+
+    @Autowired
+    public void setCommunicatorOptions(Map<String, AbstractAction> communicatorOptions) {
+        CommunicatorClient.communicatorOptions = communicatorOptions;
     }
 
     @PostConstruct
     void init() throws Exception {
         try {
-            getSessionPort();
-            makeHandShake();
-//            makeClientLogOrReg();
+            authorizationLayer.getSessionPort();
+            authorizationLayer.makeHandShake();
+            authorizationLayer.switchToAes();
+            makeClientLogOrReg();
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         } catch (InvalidKeySpecException e) {
@@ -41,104 +48,85 @@ public class CommunicatorClient extends ServerAuthorizationLayer {
         }
     }
 
-//    private void makeClientLogOrReg() {
-//        while (true) {
-//            System.out.println("""
-//                    Dostępne opcje:
-//                    1.Rejestracja
-//                    2.Logowanie
-//                    Twój wybór:\s""");
-//            try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
-//                var input = reader.readLine();
-//                System.out.println("Rozpoczecie procesu " + (input.equals("1") ? " rejestracji" : "logowania") + "!\n");
-//                String login, password;
-//
-//                RespAbstract serverResp;
-//                switch (input) {
-//                    case "1" -> {
-//                        serverResp = new RespRegistration(sendAction(new ActionRegistration(login, password).make()));
-//                        if (serverResp.getResponseStatus() == ResponseStatus.OK) {
-//                            serverResp = new RespLogin(sendAction(new ActionLogin(login, password).make()));
-//                            if (serverResp.getResponseStatus() == ResponseStatus.OK) {
-//                                makeClientRestOfActions(reader);
-//                            }
-//                        }
-//                    }
-//                    case "2" -> {
-//                        serverResp = new RespLogin(sendAction(new ActionLogin(login, password).make()));
-//                        if (serverResp.getResponseStatus() == ResponseStatus.OK) {
-//                            makeClientRestOfActions(reader);
-//                        }
-//                    }
-//                    default -> throw new IllegalStateException("Unexpected value: " + input);
-//                }
-//                System.out.print("Próbla " + (input.equals("1") ? " rejestracji" : "logowania") + " nieudana. Powód: ");
-//                System.out.println(serverResp.getResponseText());
-//                makeClientLogOrReg();
-//                break;
-//            } catch (IllegalStateException e) {
-//                System.out.println("Brak takiej opcji!");
-////                throw new RuntimeException(e);
-//            } catch (IOException e) {
-//                throw new RuntimeException(e);
-//            } catch (Exception e) {
-//                LOGGER.error(String.valueOf(e));
-//                //throw new RuntimeException(e);
-//            }
-//        }
-//    }
+    private void makeClientLogOrReg() {
+        while (true) {
+            System.out.println("""
+                    Dostępne opcje:
+                    1.Rejestracja
+                    2.Logowanie
+                    Twój wybór:\s""");
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
+                var input = reader.readLine();
+                System.out.println("Rozpoczecie procesu " + (input.equals("1") ? " rejestracji" : "logowania") + "!\n");
+                RespAbstract serverResp;
+                switch (input) {
+                    case "1" -> {
+                        serverResp = performAction("register");
+                        if (serverResp.getResponseStatus() == HttpStatus.OK) {
+                            performAction("login");
+                            makeClientRestOfActions(reader);
+                            return;
+                        }
+                    }
+                    case "2" -> {
+                        serverResp = performAction("login");
+                        if (serverResp.getResponseStatus() == HttpStatus.OK) {
+                            makeClientRestOfActions(reader);
+                            return;
+                        }
+                    }
+                    default -> throw new IllegalStateException("Unexpected value: " + input);
+                }
+                System.out.print("Próbla " + (input.equals("1") ? " rejestracji" : "logowania") + " nieudana. Powód: ");
+                System.out.println(serverResp.getResponseText());
+                makeClientLogOrReg();
+                break;
+            } catch (IllegalStateException e) {
+                System.out.println("Brak takiej opcji!");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            } catch (Exception e) {
+                LOGGER.error(String.valueOf(e));
+            }
+        }
+    }
 
-//    private String sendAction(String actionToSend) {
-//        try {
-//            var encryptedMsg = /*cipherUtility.encrypt(*/actionToSend/*, serverPublicKey)*/;
-//            out.println(encryptedMsg);
-//            return /*cipherUtility.decrypt(*/in.readLine()/*, clientPrivateKey)*/;
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
+    private RespAbstract performAction(String action) throws CommunicationException {
+        if (communicatorOptions.containsKey(action)) {
+            LOGGER.info("USER PERFORMED " + action + " WITH " /*+ message*/);
+            return communicatorOptions.get(action).run();
+        }
+        throw new CommunicationException("No such action available");
+    }
 
-//    private void makeClientRestOfActions(BufferedReader reader) throws IOException {
-//        var stopLoop = true;
-//        while (stopLoop) {
-//            System.out.println("""
-//                    Dostępne opcje:
-//                    1.Utworzenie konwersacji
-//                    2.Wylistowanie listy konwersacji
-//                    3.Wyświtlenie wiadomości w wybranej konwersacji
-//                    4.Wysłanie wiadomości w wybranej konwersacji
-//                    5.Wyświetlanie dostępnych użytkowników
-//                    Twój wybór:\s""");
-//
-//            var input = reader.readLine();
-//            RespAbstract resp;
-//            switch (input) {
-//                case "1" -> {
-//                    resp = new RespCreateConversation(sendAction(createConversation(reader).make()));
-//                }
-//                case "2" -> {
-//                    var respListUsers = new RespListConversations(sendAction(new ActionListConversations().make()));
-//                    System.out.println("Lista konwersacji: ");
-//                    System.out.println(respListUsers.getConversations());
-//                }
-//                case "3" -> {
-//
-//                    var respMessageInConversation = new RespGetMessages(sendAction("s"/*new ActionGetMessagesFromConversation("name").make()*/));
-//                    System.out.println("Wiadomo");
-//                }
-//                case "4" -> {
-//
-//                }
-//                case "5" -> {
-//                    var respListUsers = new RespListUsers(sendAction(new ActionListUsers().make()));
-//                    System.out.println("Lista dostępnych klientów: ");
-//                    System.out.println(respListUsers.getUsers());
-//                }
-//                case  "6" -> {
-//                    stopLoop = false;
-//                }
-//            }
-//        }
+    private void makeClientRestOfActions(BufferedReader reader)  {
+        Map<Integer, String> availableActions = new HashMap<>();
+        availableActions.put(1, "createConversation");
+        availableActions.put(2, "listConversations");
+        availableActions.put(3, "getConversationMessages");
+        availableActions.put(4, "message");
+        availableActions.put(5, "listUsers");
+
+        var stopLoop = true;
+        while (stopLoop) {
+            try {
+                System.out.println("""
+                        Dostępne opcje:
+                        1.Utworzenie konwersacji
+                        2.Wylistowanie listy konwersacji
+                        3.Wyświtlenie wiadomości w wybranej konwersacji
+                        4.Wysłanie wiadomości w wybranej konwersacji
+                        5.Wyświetlanie dostępnych użytkowników
+                        Twój wybór:\s""");
+
+                var input = Integer.parseInt(reader.readLine());
+                performAction(availableActions.get(input));
+            } catch (CommunicationException e) {
+                throw new RuntimeException(e);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 //
 //
 //    }
@@ -183,4 +171,5 @@ public class CommunicatorClient extends ServerAuthorizationLayer {
 //        }
 //
 //    }
+    }
 }
