@@ -23,7 +23,10 @@ import java.util.Map;
 public class CommunicatorClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(CommunicatorClient.class);
     private static Map<String, AbstractAction> communicatorOptions;
+    //todo fill this map when user is logged, it could be use in checking unread-ed messages
+    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
     private static Map<String, Conversation> conversations;
+
     private final ServerAuthorizationLayer authorizationLayer;
 
 
@@ -38,6 +41,7 @@ public class CommunicatorClient {
 
     @PostConstruct
     void init() throws Exception {
+        authorizationLayer.init();
         makeClientLogOrReg();
     }
 
@@ -54,18 +58,20 @@ public class CommunicatorClient {
                 RespAbstract serverResp;
                 switch (input) {
                     case "1" -> {
-                        serverResp = performAction("register");
+                        var userData = AbstractAction.bodyCreator.fillLoginBody();
+                        serverResp =  communicatorOptions.get("register").run(userData);
                         if (serverResp.getResponseStatus() == HttpStatus.OK) {
-                            performAction("login");
+                            System.out.println("Konto zostało utworzone pomyślnie. ");
+                            communicatorOptions.get("login").run(userData);
                             makeClientRestOfActions(reader);
-                            return;
+                            makeClientLogOrReg();
                         }
                     }
                     case "2" -> {
                         serverResp = performAction("login");
                         if (serverResp.getResponseStatus() == HttpStatus.OK) {
                             makeClientRestOfActions(reader);
-                            return;
+                            makeClientLogOrReg();
                         }
                     }
                     default -> throw new IllegalStateException("Unexpected value: " + input);
@@ -86,7 +92,7 @@ public class CommunicatorClient {
 
     private RespAbstract performAction(String action) throws CommunicationException {
         if (communicatorOptions.containsKey(action)) {
-            LOGGER.info("USER PERFORMED " + action + " WITH " /*+ message*/);
+//            LOGGER.info("USER PERFORMED " + action + " WITH " /*+ message*/);
             return communicatorOptions.get(action).run(this);
         }
         throw new CommunicationException("No such action available");
@@ -96,6 +102,9 @@ public class CommunicatorClient {
         return new ArrayList<>(conversations.keySet());
     }
 
+    /**
+     * @return list of available users
+     */
     public List<String> getUserNames() {
         return null;//todo
     }
@@ -108,8 +117,7 @@ public class CommunicatorClient {
         availableActions.put(4, "message");
         availableActions.put(5, "listUsers");
 
-        var stopLoop = true;
-        while (stopLoop) {
+        while (true) {
             try {
                 System.out.println("""
                         Dostępne opcje:
@@ -118,9 +126,13 @@ public class CommunicatorClient {
                         3.Wyświtlenie wiadomości w wybranej konwersacji
                         4.Wysłanie wiadomości w wybranej konwersacji
                         5.Wyświetlanie dostępnych użytkowników
+                        6.Wyloguj konto
                         Twój wybór:\s""");
 
                 var input = Integer.parseInt(reader.readLine());
+                if(input==6) {
+                    break;
+                }
                 performAction(availableActions.get(input));
             } catch (CommunicationException e) {
                 throw new RuntimeException(e);
@@ -128,6 +140,7 @@ public class CommunicatorClient {
                 e.printStackTrace();
             }
         }
+    }
 
 //
 //
@@ -173,5 +186,5 @@ public class CommunicatorClient {
 //        }
 //
 //    }
-    }
+
 }
