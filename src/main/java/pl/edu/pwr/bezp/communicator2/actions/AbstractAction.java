@@ -11,6 +11,9 @@ import pl.edu.pwr.bezp.communicator2.client.SocketsConnectionLayer;
 import pl.edu.pwr.bezp.communicator2.client.crytoUtilsi.AES;
 
 
+/**
+ * Abstract class for actions with server
+ */
 public abstract class AbstractAction {
     @Autowired
     private final SocketsConnectionLayer connectionLayer;
@@ -30,10 +33,25 @@ public abstract class AbstractAction {
         this.aes = aes;
     }
 
+    /**
+     * Abstract method which will create JSON Objects of action using @see Body Creator
+     * @param communicatorClient reference to communicator to get some useful data
+     * @return readied response from server
+     */
     public abstract RespAbstract run(CommunicatorClient communicatorClient);
 
+    /**
+     * Abstract method which will create JSON Objects of action using given body
+     * @param body reference to body
+     * @return readied response from server
+     */
     public abstract RespAbstract run(Body body);
 
+    /**
+     * Method which sends action to server and read response.
+     * @param data which will be sent
+     * @return response from server
+     */
     protected String communication(RequestData data) {
         try {
             var encryptedMsg = aes.encrypt(new JSONObject(data).toString());

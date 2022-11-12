@@ -15,9 +15,9 @@ public class TerminalInputBodyCreator implements BodyCreator {
     public LoginBody fillLoginBody() {
         try {
             String login, password;
-            System.out.println("Wprowadz login: ");
+            System.out.print("Wprowadz login: ");
             login = reader.readLine();
-            System.out.println("\nWprowadz haslo: ");
+            System.out.print("\nWprowadz haslo: ");
             password = reader.readLine();
             return new LoginBody(login, password);
         } catch (IOException e) {

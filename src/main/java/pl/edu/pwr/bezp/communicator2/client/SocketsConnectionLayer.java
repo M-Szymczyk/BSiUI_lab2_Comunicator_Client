@@ -33,14 +33,13 @@ public class SocketsConnectionLayer {
         LOGGER.info("Start connection to ip: " + ip + " on port: " + sessionPort);
     }
 
-    protected void getSessionPort() {
+    private void getSessionPort() {
         //get session port
         try {
             startConnection(ip, SERVER_PORT);
             sessionPort = Integer.parseInt(sendMessage("Hi"));
             LOGGER.info("Session port is: " + sessionPort);
             stopConnection();
-
         } catch (IOException e) {
             LOGGER.error("Server isn't running", e);
         }

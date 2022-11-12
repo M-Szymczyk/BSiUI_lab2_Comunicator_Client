@@ -14,6 +14,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Base64;
+import java.util.Random;
 
 @Component
 public class ServerAuthorizationLayer /*extends SocketsConnectionLayer*/ {
@@ -59,32 +61,31 @@ public class ServerAuthorizationLayer /*extends SocketsConnectionLayer*/ {
 //
 //    }
 
-    protected void makeHandShake() throws Exception {
+    private void makeHandShake() throws Exception {
         try {
-            //connect to new port
-
-
             //send public key and receive server encrypted public key
             var clientPublicKeyStr = cipherUtility.encodeKey(clientPublicKey);
             LOGGER.info("Send client public key: " + clientPublicKeyStr);
             Thread.sleep(1000);
+
             //receive server public key
             var receivedKey = sockets.sendMessage(clientPublicKeyStr);
             LOGGER.info("Server public key received");
             serverPublicKey = cipherUtility.decodePublicKey(cipherUtility.decrypt(receivedKey, clientPrivateKey));
             LOGGER.debug("Server public key is: " + serverPublicKey);
-            //send authentication word
-            var enctasd = cipherUtility.encrypt("auth", serverPublicKey);
-            //check if it is good server
-            var fAuth = cipherUtility.decrypt(sockets.sendMessage(enctasd), clientPrivateKey);
 
+            //send authentication word
+            var auth = controlMessageGenerator(100);
+            var fAuth = cipherUtility.decrypt(sockets.sendMessage(cipherUtility.encrypt(auth, serverPublicKey)), clientPrivateKey);
+
+            //check if it is good server
             var encodedHash = Hashing.sha256().hashString(
-                    "auth" + cipherUtility.encodeKey(clientPublicKey),
+                    auth+"a" + cipherUtility.encodeKey(clientPublicKey),
                     StandardCharsets.UTF_8).toString();
             if (!fAuth.equals(encodedHash)) {
                 sockets.stopConnection();
                 LOGGER.error("Server is corrupted");
-                return;
+                throw new RuntimeException("Server is corrupted");
             }
             LOGGER.info("Successful handshake with server");
 
@@ -99,5 +100,11 @@ public class ServerAuthorizationLayer /*extends SocketsConnectionLayer*/ {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private String controlMessageGenerator(int length) {
+        byte[] array = new byte[length];
+        new Random().nextBytes(array);
+        return Base64.getEncoder().encodeToString(array);
     }
 }

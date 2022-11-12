@@ -29,4 +29,8 @@ public class RespGetConversationMessages extends RespAbstract {
             throw new RuntimeException(e);
         }
     }
+
+    public List<Message> getMessages() {
+        return messages;
+    }
 }

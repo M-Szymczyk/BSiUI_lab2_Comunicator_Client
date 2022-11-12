@@ -7,6 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import pl.edu.pwr.bezp.communicator2.actions.AbstractAction;
 import pl.edu.pwr.bezp.communicator2.actions.response.RespAbstract;
+import pl.edu.pwr.bezp.communicator2.actions.response.RespGetConversationMessages;
+import pl.edu.pwr.bezp.communicator2.actions.response.RespListConversations;
 import pl.edu.pwr.bezp.communicator2.actions.response.message.Conversation;
 
 import javax.annotation.PostConstruct;
@@ -25,7 +27,7 @@ public class CommunicatorClient {
     private static Map<String, AbstractAction> communicatorOptions;
     //todo fill this map when user is logged, it could be use in checking unread-ed messages
     @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
-    private static Map<String, Conversation> conversations;
+    private static final Map<String, Conversation> conversations = new HashMap<>();
 
     private final ServerAuthorizationLayer authorizationLayer;
 
@@ -40,21 +42,20 @@ public class CommunicatorClient {
     }
 
     @PostConstruct
-    void init() throws Exception {
-        authorizationLayer.init();
+    void init() {
         makeClientLogOrReg();
     }
 
     private void makeClientLogOrReg() {
         while (true) {
-            System.out.println("""
+            System.out.print("""
                     Dostępne opcje:
                     1.Rejestracja
                     2.Logowanie
                     Twój wybór:\s""");
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
                 var input = reader.readLine();
-                System.out.println("Rozpoczecie procesu " + (input.equals("1") ? " rejestracji" : "logowania") + "!\n");
+                System.out.println("\nRozpoczecie procesu " + (input.equals("1") ? " rejestracji" : "logowania") + "!\n");
                 RespAbstract serverResp;
                 switch (input) {
                     case "1" -> {
@@ -76,8 +77,6 @@ public class CommunicatorClient {
                     }
                     default -> throw new IllegalStateException("Unexpected value: " + input);
                 }
-                System.out.print("Próbla " + (input.equals("1") ? " rejestracji" : "logowania") + " nieudana. Powód: ");
-                System.out.println(serverResp.getResponseText());
                 makeClientLogOrReg();
                 break;
             } catch (IllegalStateException e) {
@@ -119,7 +118,7 @@ public class CommunicatorClient {
 
         while (true) {
             try {
-                System.out.println("""
+                System.out.print("""
                         Dostępne opcje:
                         1.Utworzenie konwersacji
                         2.Wylistowanie listy konwersacji
@@ -130,10 +129,19 @@ public class CommunicatorClient {
                         Twój wybór:\s""");
 
                 var input = Integer.parseInt(reader.readLine());
+                System.out.print("\n");
                 if(input==6) {
                     break;
                 }
-                performAction(availableActions.get(input));
+                var result = performAction(availableActions.get(input));
+                if(input==2) {
+                    var convList = (RespListConversations)result;
+                    System.out.println(convList.getConversations());
+                }
+                if(input==3) {
+                    var convList = (RespGetConversationMessages)result;
+                    System.out.println(convList.getMessages());
+                }
             } catch (CommunicationException e) {
                 throw new RuntimeException(e);
             } catch (IOException e) {
@@ -142,10 +150,7 @@ public class CommunicatorClient {
         }
     }
 
-//
-//
 //    }
-//
 //    private ActionCreateConversation createConversation(BufferedReader reader) {
 //        try {
 //            System.out.println("Wprowadź nazwę konwersacji: ");
@@ -184,7 +189,6 @@ public class CommunicatorClient {
 //        } catch (Exception e) {
 //            throw new RuntimeException(e);
 //        }
-//
 //    }
 
 }
