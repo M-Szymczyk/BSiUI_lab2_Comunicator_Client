@@ -1,2 +1,3 @@
 # BSiUI_lab2_Comunicator_Client
-Client application to comunicator
+Aplikacja kliencka do komunikatora.
+Jedna z implementacji dostępna na repo 
